@@ -1,4 +1,8 @@
-# Admin credentials (change these!)
+# Logout
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('index'))# Admin credentials (change these!)
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'barber123')
 
@@ -125,6 +129,7 @@ def index():
 # Login page
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    error = None
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -133,24 +138,18 @@ def login():
             session['logged_in'] = True
             return redirect(url_for('serve_admin_page'))
         else:
-            return render_template_string(login_template, error="Invalid credentials")
+            error = "Invalid credentials"
     
-    return render_template_string(login_template)
-
-# Logout
-@app.route('/logout')
-def logout():
-    session.pop('logged_in', None)
-    return redirect(url_for('index'))
-
-# Login template
-login_template = '''
+    # Render login page with inline HTML (no Jinja2)
+    error_html = f'<div class="error">{error}</div>' if error else ''
+    
+    return f'''
 <!DOCTYPE html>
 <html>
 <head>
     <title>Admin Login - Barber Shop</title>
     <style>
-        body {
+        body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
             justify-content: center;
@@ -159,33 +158,33 @@ login_template = '''
             margin: 0;
             background: #000;
             color: #fff;
-        }
-        .login-form {
+        }}
+        .login-form {{
             background: rgba(255,255,255,0.05);
             padding: 3rem;
             border: 1px solid rgba(255,255,255,0.1);
             width: 100%;
             max-width: 400px;
-        }
-        h2 {
+        }}
+        h2 {{
             text-align: center;
             font-weight: 300;
             letter-spacing: 2px;
             text-transform: uppercase;
             margin-bottom: 2rem;
-        }
-        .form-group {
+        }}
+        .form-group {{
             margin-bottom: 1.5rem;
-        }
-        label {
+        }}
+        label {{
             display: block;
             margin-bottom: 0.5rem;
             font-size: 0.875rem;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: rgba(255,255,255,0.6);
-        }
-        input {
+        }}
+        input {{
             width: 100%;
             padding: 0.75rem;
             background: transparent;
@@ -193,12 +192,12 @@ login_template = '''
             border-bottom: 1px solid rgba(255,255,255,0.2);
             color: #fff;
             font-size: 1rem;
-        }
-        input:focus {
+        }}
+        input:focus {{
             outline: none;
             border-bottom-color: rgba(255,255,255,0.5);
-        }
-        button {
+        }}
+        button {{
             width: 100%;
             padding: 1rem;
             background: #fff;
@@ -209,33 +208,31 @@ login_template = '''
             letter-spacing: 1px;
             cursor: pointer;
             transition: all 0.3s ease;
-        }
-        button:hover {
+        }}
+        button:hover {{
             background: rgba(255,255,255,0.9);
-        }
-        .error {
+        }}
+        .error {{
             color: #ff6b6b;
             text-align: center;
             margin-bottom: 1rem;
-        }
-        .back-link {
+        }}
+        .back-link {{
             display: block;
             text-align: center;
             margin-top: 2rem;
             color: rgba(255,255,255,0.6);
             text-decoration: none;
-        }
-        .back-link:hover {
+        }}
+        .back-link:hover {{
             color: rgba(255,255,255,0.8);
-        }
+        }}
     </style>
 </head>
 <body>
     <form class="login-form" method="POST">
         <h2>Admin Login</h2>
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
+        {error_html}
         <div class="form-group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" required>
