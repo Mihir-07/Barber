@@ -16,8 +16,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize extensions
 db = SQLAlchemy(app)
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+CORS(app, resources={r"/*": {"origins": "*"}})
+socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
 
 # Admin credentials (change these!)
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
