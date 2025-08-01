@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barber Shop Booking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Minimal background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            z-index: -2;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.02) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.02) 0%, transparent 50%);
+        }
+
+        @keyframes move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-align: center;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Calendar Navigation */
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            padding: 0;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 400;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-btn:hover {
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .current-week {
+            font-size: 1rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.8);
+            letter-spacing: 1px;
+        }
+
+        /* Calendar Grid */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 100px repeat(7, 1fr);
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .time-header, .day-header {
+            background: #000000;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 300;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .day-header {
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .time-slot {
+            background: #000000;
+            padding: 0.75rem;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.875rem;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 300;
+        }
+
+        .slot {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            min-height: 60px;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .slot:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .slot.booked {
+            background: rgba(255, 255, 255, 0.02);
+            cursor: not-allowed;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .slot.booked::after {
+            content: '';
+            display: none;
+        }
+
+        .slot small {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 300;
+        }
+
+        .slot.booked small {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #000000;
+            padding: 3rem;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal h2 {
+            color: #ffffff;
+            margin-bottom: 2rem;
+            font-size: 1.25rem;
+            text-align: center;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 300;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem 0;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-group select option {
+            background: #000000;
+            color: white;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-bottom-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 3rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+            font-weight: 300;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: transparent;
+            color: #ffffff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Success Message */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #000000;
+            color: #ffffff;
+            padding: 1rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.875rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            animation: slideInRight 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+            z-index: 2000;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(100%); }
+        }
+
+        /* Loading indicator */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .calendar-grid {
+                grid-template-columns: 60px repeat(7, 1fr);
+                font-size: 0.8rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .slot {
+                padding: 0.5rem;
+                min-height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <header class="header">
+        <h1>Barber Shop · Book Your Slot</h1>
+    </header>
+
+    <div class="container">
+        <div class="calendar-nav">
+            <button class="nav-btn" onclick="previousWeek()">← Previous Week</button>
+            <div class="current-week" id="currentWeek"></div>
+            <button class="nav-btn" onclick="nextWeek()">Next Week →</button>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid">
+            <div class="loading">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="modal" id="bookingModal">
+        <div class="modal-content">
+            <h2>Book Your Appointment</h2>
+            <p id="selectedSlot" style="text-align: center; color: rgba(255, 255, 255, 0.6); margin-bottom: 1.5rem;"></p>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label for="name">Your Name</label>
+                    <input type="text" id="name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" required placeholder="+91 98765 43210">
+                </div>
+                <div class="form-group">
+                    <label for="service">Select Service</label>
+                    <select id="service" required>
+                        <option value="">Choose a service...</option>
+                        <option value="haircut">Haircut - ₹200</option>
+                        <option value="beard">Beard Trim - ₹100</option>
+                        <option value="haircut-beard">Haircut + Beard - ₹250</option>
+                        <option value="facial">Facial - ₹500</option>
+                        <option value="head-massage">Head Massage - ₹150</option>
+                        <option value="hair-color">Hair Color - ₹800</option>
+                        <option value="hair-spa">Hair Spa - ₹600</option>
+                        <option value="shave">Clean Shave - ₹80</option>
+                        <option value="threading">Threading - ₹50</option>
+                        <option value="complete-package">Complete Grooming Package - ₹1200</option>
+                    </select>
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">Confirm Booking</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Backend API URL - change this to your server URL
+        const API_URL = 'http://localhost:5000';
+        
+        // Initialize Socket.IO for real-time updates
+        const socket = io(API_URL);
+        
+        socket.on('connect', () => {
+            console.log('Connected to booking system');
+        });
+        
+        socket.on('new_booking', (booking) => {
+            console.log('New booking received:', booking);
+            loadBookings(); // Reload bookings when a new one is created
+        });
+        
+        socket.on('booking_cancelled', (booking) => {
+            console.log('Booking cancelled:', booking);
+            loadBookings(); // Reload bookings when one is cancelled
+        });
+        
+        let bookings = {};
+        let currentWeekStart = new Date();
+        currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay());
+        currentWeekStart.setHours(0, 0, 0, 0);
+
+        // Barber shop hours (9 AM to 6 PM)
+        const shopHours = {
+            start: 9,
+            end: 18
+        };
+
+        const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const timeSlots = [];
+
+        // Generate 40-minute time slots (excluding lunch break 2-3 PM)
+        for (let hour = shopHours.start; hour < shopHours.end; hour++) {
+            // Skip lunch hour (2 PM - 3 PM)
+            if (hour === 14) continue;
+            
+            timeSlots.push(`${hour}:00`);
+            if (hour < shopHours.end - 1 && hour !== 13) { // Don't add 13:40 as it would overlap with lunch
+                timeSlots.push(`${hour}:40`);
+            }
+        }
+
+        function loadBookings() {
+            const weekEnd = new Date(currentWeekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            
+            fetch(`${API_URL}/api/bookings?startDate=${currentWeekStart.toISOString()}&endDate=${weekEnd.toISOString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing bookings
+                    bookings = {};
+                    
+                    // Convert API response to our format
+                    data.forEach(booking => {
+                        const slotKey = `${booking.date}_${booking.time}`;
+                        bookings[slotKey] = {
+                            name: booking.name,
+                            phone: booking.phone,
+                            service: booking.service,
+                            id: booking.id
+                        };
+                    });
+                    
+                    generateCalendar();
+                })
+                .catch(error => {
+                    console.error('Error loading bookings:', error);
+                    // If backend is not running, show calendar anyway
+                    generateCalendar();
+                });
+        }
+
+        function formatDate(date) {
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function updateWeekDisplay() {
+            const weekEnd = new Date(currentWeekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            document.getElementById('currentWeek').textContent = 
+                `${formatDate(currentWeekStart)} - ${formatDate(weekEnd)}`;
+        }
+
+        function generateCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            // Add empty corner cell
+            const corner = document.createElement('div');
+            corner.className = 'time-header';
+            corner.textContent = 'Time';
+            grid.appendChild(corner);
+
+            // Add day headers
+            for (let i = 0; i < 7; i++) {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                const currentDay = new Date(currentWeekStart);
+                currentDay.setDate(currentDay.getDate() + i);
+                dayHeader.innerHTML = `${daysOfWeek[i]}<br>${formatDate(currentDay)}`;
+                grid.appendChild(dayHeader);
+            }
+
+            // Add time slots and booking slots
+            timeSlots.forEach((time, index) => {
+                // Add time label
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'time-slot';
+                timeLabel.textContent = time;
+                grid.appendChild(timeLabel);
+
+                // Add slots for each day
+                for (let day = 0; day < 7; day++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'slot';
+                    
+                    const slotDate = new Date(currentWeekStart);
+                    slotDate.setDate(slotDate.getDate() + day);
+                    const slotKey = `${slotDate.toDateString()}_${time}`;
+                    
+                    // Check if slot is booked
+                    if (bookings[slotKey]) {
+                        slot.classList.add('booked');
+                        slot.innerHTML = `<small>${bookings[slotKey].name}<br>${bookings[slotKey].service}</small>`;
+                        slot.style.fontSize = '0.75rem';
+                    } else {
+                        // Check if slot is in the past
+                        const slotDateTime = new Date(slotDate);
+                        const [hours, minutes] = time.split(':');
+                        slotDateTime.setHours(parseInt(hours), parseInt(minutes));
+                        
+                        if (slotDateTime < new Date()) {
+                            slot.classList.add('booked');
+                            slot.style.opacity = '0.5';
+                        } else {
+                            slot.onclick = () => openBookingModal(slotDate, time);
+                            slot.innerHTML = '<small>Available</small>';
+                        }
+                    }
+                    
+                    grid.appendChild(slot);
+                }
+
+                // Add lunch break row after 1:40 PM
+                if (time === '13:40') {
+                    const lunchLabel = document.createElement('div');
+                    lunchLabel.className = 'time-slot';
+                    lunchLabel.textContent = '2:00 PM';
+                    lunchLabel.style.background = 'rgba(0, 0, 0, 0.5)';
+                    grid.appendChild(lunchLabel);
+
+                    for (let day = 0; day < 7; day++) {
+                        const lunchSlot = document.createElement('div');
+                        lunchSlot.className = 'slot booked';
+                        lunchSlot.innerHTML = '<small>LUNCH BREAK</small>';
+                        lunchSlot.style.background = 'rgba(255, 255, 255, 0.02)';
+                        lunchSlot.style.cursor = 'not-allowed';
+                        grid.appendChild(lunchSlot);
+                    }
+                }
+            });
+        }
+
+        function openBookingModal(date, time) {
+            const modal = document.getElementById('bookingModal');
+            const selectedSlot = document.getElementById('selectedSlot');
+            selectedSlot.textContent = `${daysOfWeek[date.getDay()]}, ${formatDate(date)} at ${time}`;
+            selectedSlot.dataset.date = date.toDateString();
+            selectedSlot.dataset.time = time;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('bookingModal').style.display = 'none';
+            document.getElementById('bookingForm').reset();
+        }
+
+        function previousWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+            updateWeekDisplay();
+            loadBookings();
+        }
+
+        function nextWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+            updateWeekDisplay();
+            loadBookings();
+        }
+
+        // Handle booking form submission
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const service = document.getElementById('service').value;
+            const selectedSlot = document.getElementById('selectedSlot');
+            const date = selectedSlot.dataset.date;
+            const time = selectedSlot.dataset.time;
+            
+            // Get service display name
+            const serviceSelect = document.getElementById('service');
+            const serviceName = serviceSelect.options[serviceSelect.selectedIndex].text.split(' - ')[0];
+            
+            try {
+                const response = await fetch(`${API_URL}/api/bookings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        date: date,
+                        time: time,
+                        name: name,
+                        phone: phone,
+                        service: serviceName
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Close modal and refresh calendar
+                    closeModal();
+                    loadBookings();
+                    
+                    // Show success message
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'success-message';
+                    successMsg.textContent = 'Booking confirmed';
+                    document.body.appendChild(successMsg);
+                    
+                    setTimeout(() => {
+                        successMsg.remove();
+                    }, 3000);
+                } else {
+                    alert(result.error || 'Failed to create booking');
+                }
+            } catch (error) {
+                console.error('Error creating booking:', error);
+                alert('Error creating booking. Please try again.');
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = (event) => {
+            const modal = document.getElementById('bookingModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+
+        // Initialize calendar
+        updateWeekDisplay();
+        loadBookings();  // Load bookings from server
+    </script>
+</body>
+</html>

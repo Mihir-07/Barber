@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barber Shop - Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card p {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .bookings-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .date-section {
+            margin-bottom: 2rem;
+        }
+
+        .date-header {
+            font-size: 1.25rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .booking-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .booking-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 2rem;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .booking-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .booking-time {
+            font-size: 1.25rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .booking-details h4 {
+            font-weight: 400;
+            margin-bottom: 0.25rem;
+        }
+
+        .booking-details p {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .booking-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-danger {
+            border-color: rgba(239, 68, 68, 0.5);
+            color: rgba(239, 68, 68, 0.8);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .notification {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 2rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .filter-section {
+            max-width: 1200px;
+            margin: 0 auto 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filter-section input[type="date"] {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .booking-item {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Barber Shop · Admin Panel</h1>
+        <p style="color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem;">Real-time booking management</p>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <h3 id="todayCount">0</h3>
+            <p>Today's Bookings</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="weekCount">0</h3>
+            <p>This Week</p>
+        </div>
+        <div class="stat-card">
+            <h3 id="totalCount">0</h3>
+            <p>Total Active</p>
+        </div>
+    </div>
+
+    <div class="filter-section">
+        <label>Filter by date:</label>
+        <input type="date" id="filterDate" onchange="filterBookings()">
+        <button class="btn" onclick="clearFilter()">Clear Filter</button>
+    </div>
+
+    <div class="bookings-container" id="bookingsContainer">
+        <!-- Bookings will be loaded here -->
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:5000';
+        const socket = io(API_URL);
+        
+        let allBookings = [];
+        
+        socket.on('connect', () => {
+            console.log('Connected to booking system');
+            showNotification('Connected to real-time updates');
+        });
+        
+        socket.on('new_booking', (booking) => {
+            showNotification(`New booking: ${booking.name} at ${booking.time}`);
+            loadBookings();
+        });
+        
+        socket.on('booking_cancelled', (booking) => {
+            showNotification(`Booking cancelled: ${booking.name}`);
+            loadBookings();
+        });
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        async function loadBookings() {
+            try {
+                const response = await fetch(`${API_URL}/api/bookings`);
+                const bookings = await response.json();
+                allBookings = bookings;
+                displayBookings(bookings);
+                updateStats(bookings);
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+            }
+        }
+        
+        function displayBookings(bookings) {
+            const container = document.getElementById('bookingsContainer');
+            
+            if (bookings.length === 0) {
+                container.innerHTML = '<div class="empty-state">No bookings found</div>';
+                return;
+            }
+            
+            // Group bookings by date
+            const groupedBookings = {};
+            bookings.forEach(booking => {
+                if (!groupedBookings[booking.date]) {
+                    groupedBookings[booking.date] = [];
+                }
+                groupedBookings[booking.date].push(booking);
+            });
+            
+            // Sort dates
+            const sortedDates = Object.keys(groupedBookings).sort();
+            
+            container.innerHTML = sortedDates.map(date => {
+                const dateBookings = groupedBookings[date].sort((a, b) => {
+                    return a.time.localeCompare(b.time);
+                });
+                
+                const dateObj = new Date(date);
+                const formattedDate = dateObj.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                
+                return `
+                    <div class="date-section">
+                        <h2 class="date-header">${formattedDate}</h2>
+                        <div class="booking-list">
+                            ${dateBookings.map(booking => `
+                                <div class="booking-item">
+                                    <div class="booking-time">${booking.time}</div>
+                                    <div class="booking-details">
+                                        <h4>${booking.name}</h4>
+                                        <p>${booking.service} · ${booking.phone}</p>
+                                    </div>
+                                    <div class="booking-actions">
+                                        <button class="btn" onclick="callCustomer('${booking.phone}')">Call</button>
+                                        <button class="btn btn-danger" onclick="cancelBooking(${booking.id})">Cancel</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function updateStats(bookings) {
+            const today = new Date().toDateString();
+            const todayBookings = bookings.filter(b => new Date(b.date).toDateString() === today);
+            
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            
+            const weekBookings = bookings.filter(b => {
+                const bookingDate = new Date(b.date);
+                return bookingDate >= weekStart && bookingDate <= weekEnd;
+            });
+            
+            document.getElementById('todayCount').textContent = todayBookings.length;
+            document.getElementById('weekCount').textContent = weekBookings.length;
+            document.getElementById('totalCount').textContent = bookings.length;
+        }
+        
+        async function cancelBooking(id) {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/bookings/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showNotification('Booking cancelled successfully');
+                    loadBookings();
+                } else {
+                    alert('Failed to cancel booking');
+                }
+            } catch (error) {
+                console.error('Error cancelling booking:', error);
+                alert('Error cancelling booking');
+            }
+        }
+        
+        function callCustomer(phone) {
+            window.location.href = `tel:${phone}`;
+        }
+        
+        function filterBookings() {
+            const filterDate = document.getElementById('filterDate').value;
+            if (filterDate) {
+                const filtered = allBookings.filter(b => b.date === filterDate);
+                displayBookings(filtered);
+            } else {
+                displayBookings(allBookings);
+            }
+        }
+        
+        function clearFilter() {
+            document.getElementById('filterDate').value = '';
+            displayBookings(allBookings);
+        }
+        
+        // Load bookings on page load
+        loadBookings();
+        
+        // Refresh bookings every 30 seconds
+        setInterval(loadBookings, 30000);
+    </script>
+</body>
+</html>
