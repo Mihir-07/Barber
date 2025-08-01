@@ -255,49 +255,53 @@ def logout():
 @app.route('/book')
 def serve_booking_page():
     import os
-    print(f"Current directory: {os.getcwd()}")
-    print(f"Files in directory: {os.listdir('.')}")
-    
-    if os.path.exists('index.html'):
-        print("index.html found!")
-        return send_from_directory('.', 'index.html')
-    else:
-        print("index.html NOT found!")
-        return '''
+    try:
+        # Try to read and return the file content directly
+        with open('index.html', 'r', encoding='utf-8') as f:
+            content = f.read()
+            # Check if API_URL needs to be updated
+            if 'http://localhost:5000' in content:
+                content = content.replace('http://localhost:5000', 'https://barber-4lis.onrender.com')
+            return content
+    except Exception as e:
+        return f'''
         <!DOCTYPE html>
         <html>
         <head><title>Error</title></head>
         <body style="font-family: Arial; padding: 20px;">
-            <h1>index.html not found</h1>
-            <p>Current directory: ''' + os.getcwd() + '''</p>
-            <p>Files in directory:</p>
-            <ul>
-            ''' + ''.join([f'<li>{f}</li>' for f in os.listdir('.')]) + '''
-            </ul>
-            <p>Please ensure index.html is in the root directory of your GitHub repository.</p>
+            <h1>Error loading index.html</h1>
+            <p>Error: {str(e)}</p>
+            <p>File exists: {os.path.exists('index.html')}</p>
+            <p>File size: {os.path.getsize('index.html') if os.path.exists('index.html') else 'N/A'} bytes</p>
             <a href="/">Back to Home</a>
         </body>
         </html>
-        ''', 404
+        ''', 500
 
 @app.route('/admin')
 @login_required
 def serve_admin_page():
     import os
-    if os.path.exists('admin.html'):
-        return send_from_directory('.', 'admin.html')
-    else:
-        return '''
+    try:
+        # Try to read and return the file content directly
+        with open('admin.html', 'r', encoding='utf-8') as f:
+            content = f.read()
+            # Check if API_URL needs to be updated
+            if 'http://localhost:5000' in content:
+                content = content.replace('http://localhost:5000', 'https://barber-4lis.onrender.com')
+            return content
+    except Exception as e:
+        return f'''
         <!DOCTYPE html>
         <html>
         <head><title>Error</title></head>
         <body style="font-family: Arial; padding: 20px;">
-            <h1>admin.html not found</h1>
-            <p>Please ensure admin.html is in the root directory of your GitHub repository.</p>
+            <h1>Error loading admin.html</h1>
+            <p>Error: {str(e)}</p>
             <a href="/">Back to Home</a>
         </body>
         </html>
-        ''', 404
+        ''', 500
 
 # API Routes
 @app.route('/api/bookings', methods=['GET'])
