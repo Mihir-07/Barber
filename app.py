@@ -304,6 +304,10 @@ def serve_admin_page():
         ''', 500
 
 # API Routes
+@app.route('/api/test')
+def test_api():
+    return jsonify({'status': 'API is working!', 'time': datetime.now().isoformat()})
+
 @app.route('/api/bookings', methods=['GET'])
 def get_bookings():
     try:
