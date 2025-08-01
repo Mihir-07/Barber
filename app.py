@@ -1,10 +1,22 @@
-# app.py
-from flask import Flask, request, jsonify, render_template_string, send_from_directory
+# Admin credentials (change these!)
+ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'barber123')
+
+# Login required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function# app.py
+from flask import Flask, request, jsonify, render_template_string, send_from_directory, session, redirect, url_for
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit
 from datetime import datetime
 import os
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
@@ -53,90 +65,191 @@ def index():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Barber Shop API</title>
+        <title>Barber Shop</title>
         <style>
             body {
-                font-family: Arial, sans-serif;
-                max-width: 800px;
-                margin: 50px auto;
-                padding: 20px;
-                background: #f5f5f5;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                margin: 0;
+                background: #000;
+                color: #fff;
             }
-            h1 { color: #333; }
-            .endpoint {
-                background: white;
-                padding: 15px;
-                margin: 10px 0;
-                border-radius: 5px;
-                border-left: 4px solid #007bff;
+            .container {
+                text-align: center;
             }
-            code {
-                background: #f0f0f0;
-                padding: 2px 5px;
-                border-radius: 3px;
+            h1 {
+                font-size: 3rem;
+                font-weight: 300;
+                letter-spacing: 2px;
+                margin-bottom: 3rem;
+                text-transform: uppercase;
             }
-            .links {
-                margin-top: 30px;
-                padding: 20px;
-                background: #e9ecef;
-                border-radius: 5px;
-            }
-            .links a {
+            .btn {
                 display: inline-block;
-                margin: 10px;
-                padding: 10px 20px;
-                background: #007bff;
-                color: white;
+                margin: 1rem;
+                padding: 1rem 3rem;
+                background: transparent;
+                color: #fff;
                 text-decoration: none;
-                border-radius: 5px;
+                border: 1px solid rgba(255,255,255,0.3);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                transition: all 0.3s ease;
             }
-            .links a:hover {
-                background: #0056b3;
+            .btn:hover {
+                background: rgba(255,255,255,0.1);
+                border-color: rgba(255,255,255,0.5);
+            }
+            .btn-primary {
+                background: #fff;
+                color: #000;
+            }
+            .btn-primary:hover {
+                background: rgba(255,255,255,0.9);
             }
         </style>
     </head>
     <body>
-        <h1>🪒 Barber Shop Booking API</h1>
-        <p>Backend is running successfully!</p>
-        
-        <div class="links">
-            <h2>Access the Application:</h2>
-            <a href="/book">Customer Booking Page</a>
-            <a href="/admin">Admin Panel</a>
-        </div>
-        
-        <h2>Available API Endpoints:</h2>
-        
-        <div class="endpoint">
-            <strong>GET /api/bookings</strong><br>
-            Get all bookings (optional query params: startDate, endDate)
-        </div>
-        
-        <div class="endpoint">
-            <strong>POST /api/bookings</strong><br>
-            Create a new booking<br>
-            Body: <code>{ date, time, name, phone, service }</code>
-        </div>
-        
-        <div class="endpoint">
-            <strong>DELETE /api/bookings/{id}</strong><br>
-            Cancel a booking
-        </div>
-        
-        <div class="endpoint">
-            <strong>GET /api/bookings/check</strong><br>
-            Check if a slot is available<br>
-            Query: <code>?date=XXX&time=YYY</code>
-        </div>
-        
-        <h2>WebSocket Events:</h2>
-        <div class="endpoint">
-            <strong>new_booking</strong> - Emitted when a new booking is created<br>
-            <strong>booking_cancelled</strong> - Emitted when a booking is cancelled
+        <div class="container">
+            <h1>Barber Shop</h1>
+            <a href="/book" class="btn btn-primary">Book Appointment</a>
+            <a href="/login" class="btn">Admin Login</a>
         </div>
     </body>
     </html>
     '''
+
+# Login page
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['logged_in'] = True
+            return redirect(url_for('serve_admin_page'))
+        else:
+            return render_template_string(login_template, error="Invalid credentials")
+    
+    return render_template_string(login_template)
+
+# Logout
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('index'))
+
+# Login template
+login_template = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Login - Barber Shop</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #000;
+            color: #fff;
+        }
+        .login-form {
+            background: rgba(255,255,255,0.05);
+            padding: 3rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            text-align: center;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.6);
+        }
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            font-size: 1rem;
+        }
+        input:focus {
+            outline: none;
+            border-bottom-color: rgba(255,255,255,0.5);
+        }
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: #fff;
+            color: #000;
+            border: none;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: rgba(255,255,255,0.9);
+        }
+        .error {
+            color: #ff6b6b;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 2rem;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+        }
+        .back-link:hover {
+            color: rgba(255,255,255,0.8);
+        }
+    </style>
+</head>
+<body>
+    <form class="login-form" method="POST">
+        <h2>Admin Login</h2>
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit">Login</button>
+        <a href="/" class="back-link">← Back to Home</a>
+    </form>
+</body>
+</html>
+'''
 
 # Serve static files
 @app.route('/book')
@@ -144,6 +257,7 @@ def serve_booking_page():
     return send_from_directory('.', 'index.html')
 
 @app.route('/admin')
+@login_required
 def serve_admin_page():
     return send_from_directory('.', 'admin.html')
 
