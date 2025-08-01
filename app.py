@@ -1,20 +1,5 @@
-# Logout
-@app.route('/logout')
-def logout():
-    session.pop('logged_in', None)
-    return redirect(url_for('index'))# Admin credentials (change these!)
-ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'barber123')
-
-# Login required decorator
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'logged_in' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function# app.py
-from flask import Flask, request, jsonify, render_template_string, send_from_directory, session, redirect, url_for
+# app.py
+from flask import Flask, request, jsonify, send_from_directory, session, redirect, url_for
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, emit
@@ -33,6 +18,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Admin credentials (change these!)
+ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'barber123')
 
 # Database Model
 class Booking(db.Model):
@@ -61,8 +50,16 @@ class Booking(db.Model):
 with app.app_context():
     db.create_all()
 
-# API Routes
+# Login required decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
+# Routes
 @app.route('/')
 def index():
     return '''
@@ -140,7 +137,7 @@ def login():
         else:
             error = "Invalid credentials"
     
-    # Render login page with inline HTML (no Jinja2)
+    # Render login page with inline HTML
     error_html = f'<div class="error">{error}</div>' if error else ''
     
     return f'''
@@ -248,6 +245,12 @@ def login():
 </html>
 '''
 
+# Logout
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('index'))
+
 # Serve static files
 @app.route('/book')
 def serve_booking_page():
@@ -258,6 +261,7 @@ def serve_booking_page():
 def serve_admin_page():
     return send_from_directory('.', 'admin.html')
 
+# API Routes
 @app.route('/api/bookings', methods=['GET'])
 def get_bookings():
     try:
