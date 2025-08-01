@@ -254,12 +254,50 @@ def logout():
 # Serve static files
 @app.route('/book')
 def serve_booking_page():
-    return send_from_directory('.', 'index.html')
+    import os
+    print(f"Current directory: {os.getcwd()}")
+    print(f"Files in directory: {os.listdir('.')}")
+    
+    if os.path.exists('index.html'):
+        print("index.html found!")
+        return send_from_directory('.', 'index.html')
+    else:
+        print("index.html NOT found!")
+        return '''
+        <!DOCTYPE html>
+        <html>
+        <head><title>Error</title></head>
+        <body style="font-family: Arial; padding: 20px;">
+            <h1>index.html not found</h1>
+            <p>Current directory: ''' + os.getcwd() + '''</p>
+            <p>Files in directory:</p>
+            <ul>
+            ''' + ''.join([f'<li>{f}</li>' for f in os.listdir('.')]) + '''
+            </ul>
+            <p>Please ensure index.html is in the root directory of your GitHub repository.</p>
+            <a href="/">Back to Home</a>
+        </body>
+        </html>
+        ''', 404
 
 @app.route('/admin')
 @login_required
 def serve_admin_page():
-    return send_from_directory('.', 'admin.html')
+    import os
+    if os.path.exists('admin.html'):
+        return send_from_directory('.', 'admin.html')
+    else:
+        return '''
+        <!DOCTYPE html>
+        <html>
+        <head><title>Error</title></head>
+        <body style="font-family: Arial; padding: 20px;">
+            <h1>admin.html not found</h1>
+            <p>Please ensure admin.html is in the root directory of your GitHub repository.</p>
+            <a href="/">Back to Home</a>
+        </body>
+        </html>
+        ''', 404
 
 # API Routes
 @app.route('/api/bookings', methods=['GET'])
