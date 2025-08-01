@@ -259,10 +259,12 @@ def serve_booking_page():
         # Try to read and return the file content directly
         with open('index.html', 'r', encoding='utf-8') as f:
             content = f.read()
-            # Check if API_URL needs to be updated
-            if 'http://localhost:5000' in content:
-                content = content.replace('http://localhost:5000', 'https://barber-4lis.onrender.com')
-            return content
+            # Check if API_URL needs to be updated - be more specific to avoid breaking JS
+            content = content.replace("const API_URL = 'http://localhost:5000';", 
+                                    "const API_URL = 'https://barber-4lis.onrender.com';")
+            content = content.replace('const API_URL = "http://localhost:5000";', 
+                                    'const API_URL = "https://barber-4lis.onrender.com";')
+            return content, 200, {'Content-Type': 'text/html; charset=utf-8'}
     except Exception as e:
         return f'''
         <!DOCTYPE html>
@@ -286,10 +288,12 @@ def serve_admin_page():
         # Try to read and return the file content directly
         with open('admin.html', 'r', encoding='utf-8') as f:
             content = f.read()
-            # Check if API_URL needs to be updated
-            if 'http://localhost:5000' in content:
-                content = content.replace('http://localhost:5000', 'https://barber-4lis.onrender.com')
-            return content
+            # Check if API_URL needs to be updated - be more specific to avoid breaking JS
+            content = content.replace("const API_URL = 'http://localhost:5000';", 
+                                    "const API_URL = 'https://barber-4lis.onrender.com';")
+            content = content.replace('const API_URL = "http://localhost:5000";', 
+                                    'const API_URL = "https://barber-4lis.onrender.com";')
+            return content, 200, {'Content-Type': 'text/html; charset=utf-8'}
     except Exception as e:
         return f'''
         <!DOCTYPE html>
